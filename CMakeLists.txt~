@@ -103,9 +103,9 @@ include_directories(
 
 ## Declare a cpp executable
 # add_executable(robot_driver_node src/robot_driver_node.cpp)
-add_executable( pioneer_laser_node src/a.cpp) 
-target_link_libraries(pioneer_laser_node ${catkin_LIBRARIES}) 
-add_dependencies(pioneer_laser_node ${catkin_EXPORTED_TARGETS})
+add_executable( pioneer_a_node src/a.cpp) 
+target_link_libraries(pioneer_a_node ${catkin_LIBRARIES}) 
+add_dependencies(pioneer_a_node ${catkin_EXPORTED_TARGETS})
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(robot_driver_node robot_driver_generate_messages_cpp)
