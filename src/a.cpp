@@ -14,17 +14,20 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
         float rangeDataNum =  1 + (laserScanData->angle_max - laserScanData->angle_min)/(laserScanData->angle_increment);
 
         velocityCommand.linear.x = 0.15;
+	int obList[512];
 	int obSize = 0;
         int obAtLeft = 0;
 	int isAnyOb = 0; 
 	int numOfOb = 0;
 	float lastDistance = laserScanData->ranges[0];
+	float nearestOb = 1000;
         // Go through the laser data 
         for(int j = 0; j < rangeDataNum; ++j)
         {
 	  float currentDistance = laserScanData->ranges[j];
-	  if (abs(currentDistance- lastDistance) > 0.8){
+	  if (abs(currentDistance- lastDistance) > 0.8 && (currentDistance < 0.7 || lastDistance<0.7)){
 		numOfOb ++;
+		
 	  }
 	  lastDistance = currentDistance;
 	  
@@ -37,17 +40,36 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	    isAnyOb = 1;
 	    obSize ++;
 	  }
+
+	  if( laserScanData->ranges[j]< 0.2) {
+		if ( j < 256){
+			velocityCommand.angular.z = 0.3;
+		}else{
+			velocityCommand.angular.z = -0.3;
+		}
+		velocityCommand.linear.x = 0;
+		isSwapMode = 0;
+		cout << "Emergency avoidence mode"<<"\n";
+		return;
+ 	  }
         }
 	numOfOb = (numOfOb + 1) / 2;
 	if (numOfOb == 0 && isSwapMode == 0){
-	  if (laserScanData->ranges[6] < laserScanData->ranges[506]){
+	  float smallCount = 0;
+	  float largeCount = 0;
+	  for (int i=0; i<12; i++){
+	    smallCount += laserScanData->ranges[i];
+	    largeCount += laserScanData->ranges[511-i];
+	  }
+	  if (smallCount < largeCount){
 	    havePosAngV = true;
 	  }else{
 	    havePosAngV = false;
 	  }
 	  isSwapMode = 1;
+ 	  cout << "Entering swap line mode!" << "\n";	
 	}
-        if(isAnyOb == 1 && isSwapMode == 0)
+	if(isAnyOb == 1 && isSwapMode == 0)
         {
                 if (obAtLeft == 0){
                         velocityCommand.angular.z = 0.3;
@@ -62,10 +84,10 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
         }else{
 	  timer ++;
 	  //Finish the swap mode
-	  if (timer > 190){
+	  if (timer > 195){
 	    timer = 0;
 	    isSwapMode = 0;
-	  }else if (timer > 140){
+	  }else if (timer > 145){
 		if (havePosAngV){
 			velocityCommand.angular.z = 0.3;
 		}else{
@@ -75,7 +97,7 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	  }else if (timer > 90){
 	  	velocityCommand.linear.x = 0.15;
 		velocityCommand.angular.z = 0.0;
-	  }else if(timer > 40){  
+	  }else if(timer > 38){  
 		if (havePosAngV){
 			velocityCommand.angular.z = 0.3;
 		}else{
@@ -84,7 +106,6 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 		velocityCommand.linear.x = 0.0;
 	  }
 	}
-	cout << numOfOb << " : "<<obSize << " : "<< isSwapMode << "-------------------\n\n\n";
 }
 
 int main (int argc, char **argv) {

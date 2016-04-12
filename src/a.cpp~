@@ -37,6 +37,17 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	    isAnyOb = 1;
 	    obSize ++;
 	  }
+
+	  if( laserScanData->ranges[j]< 0.2) {
+		if ( j < 256){
+			velocityCommand.angular.z = 0.3;
+		}else{
+			velocityCommand.angular.z = -0.3;
+		}
+		velocityCommand.linear.x = 0;
+		cout << "Emergency avoidence mode"<<"\n";
+		return;
+ 	  }
         }
 	numOfOb = (numOfOb + 1) / 2;
 	if (numOfOb == 0 && isSwapMode == 0){
@@ -46,8 +57,9 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	    havePosAngV = false;
 	  }
 	  isSwapMode = 1;
+ 	  cout << "Entering swap line mode!" << "\n";	
 	}
-        if(isAnyOb == 1 && isSwapMode == 0)
+	if(isAnyOb == 1 && isSwapMode == 0)
         {
                 if (obAtLeft == 0){
                         velocityCommand.angular.z = 0.3;
