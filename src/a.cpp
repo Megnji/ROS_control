@@ -13,25 +13,24 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
         // Example of using some of the non-range data-types
         float rangeDataNum =  1 + (laserScanData->angle_max - laserScanData->angle_min)/(laserScanData->angle_increment);
 
-        velocityCommand.linear.x = 0.15;
+        velocityCommand.linear.x = 0.1;
 	int obList[512];
 	int obSize = 0;
         int obAtLeft = 0;
 	int isAnyOb = 0; 
 	int numOfOb = 0;
 	float lastDistance = laserScanData->ranges[0];
-	float nearestOb = 1000;
         // Go through the laser data 
         for(int j = 0; j < rangeDataNum; ++j)
         {
 	  float currentDistance = laserScanData->ranges[j];
-	  if (abs(currentDistance- lastDistance) > 0.8 && (currentDistance < 0.7 || lastDistance<0.7)){
+	  if (abs(currentDistance- lastDistance) > 0.1 && (currentDistance < 0.1 || lastDistance<0.1)){
 		numOfOb ++;
 		
 	  }
 	  lastDistance = currentDistance;
-	  
-	  if( laserScanData->ranges[j] < 0.34 ){
+	  cout << currentDistance << "   ";
+	  if( laserScanData->ranges[j] < 0.10 ){
 	    if (j<256){
 	      obAtLeft = 0;
 	    }else{
@@ -41,7 +40,7 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	    obSize ++;
 	  }
 
-	  if( laserScanData->ranges[j]< 0.2) {
+	  if( laserScanData->ranges[j]< 0.05) {
 		if ( j < 256){
 			velocityCommand.angular.z = 0.3;
 		}else{
@@ -95,7 +94,7 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 		}
 		velocityCommand.linear.x = 0.0;
 	  }else if (timer > 90){
-	  	velocityCommand.linear.x = 0.15;
+	  	velocityCommand.linear.x = 0.1;
 		velocityCommand.angular.z = 0.0;
 	  }else if(timer > 38){  
 		if (havePosAngV){
@@ -106,6 +105,7 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 		velocityCommand.linear.x = 0.0;
 	  }
 	}
+	cout << "\n----------------------\n";
 }
 
 int main (int argc, char **argv) {
