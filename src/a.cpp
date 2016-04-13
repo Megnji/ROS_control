@@ -3,11 +3,19 @@
 #include "sensor_msgs/LaserScan.h"
 #include <stdlib.h>     //for using the function sleep
 #include <iostream>     //for using cout
+#include <cmath>
 using namespace std;
 geometry_msgs::Twist velocityCommand;
+
+//Because the frequency of laser callback is set, we can use int as a timer
 int timer=0;
+
+//Will set to 1 when robot detect no close obstacles
 int isSwapMode=0;
+
+//Used in swap mode, detect the longer distance of both side and choose the wider side to turn to
 bool havePosAngV = false;
+
 void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData) 
 {
         // Example of using some of the non-range data-types
@@ -20,17 +28,17 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	int isAnyOb = 0; 
 	int numOfOb = 0;
 	float lastDistance = laserScanData->ranges[0];
-        // Go through the laser data 
+        // Go through the laser data, data detection 
         for(int j = 0; j < rangeDataNum; ++j)
         {
 	  float currentDistance = laserScanData->ranges[j];
-	  if (abs(currentDistance- lastDistance) > 0.1 && (currentDistance < 0.1 || lastDistance<0.1)){
-		numOfOb ++;
+	  if (abs(currentDistance- lastDistance) > 0.5 && (currentDistance < 0.7 || lastDistance<0.7) && isfinite(currentDistance)){
+	    numOfOb ++;
 		
 	  }
 	  lastDistance = currentDistance;
 	  cout << currentDistance << "   ";
-	  if( laserScanData->ranges[j] < 0.10 ){
+	  if( currentDistance < 0.32 && isfinite(currentDistance) ){
 	    if (j<256){
 	      obAtLeft = 0;
 	    }else{
@@ -38,21 +46,24 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	    }
 	    isAnyOb = 1;
 	    obSize ++;
+	    velocityCommand.linear.x = 0.0;
 	  }
 
-	  if( laserScanData->ranges[j]< 0.05) {
+	  if( currentDistance < 0.2 && isfinite(currentDistance)) {
 		if ( j < 256){
 			velocityCommand.angular.z = 0.3;
 		}else{
 			velocityCommand.angular.z = -0.3;
 		}
-		velocityCommand.linear.x = 0;
+		velocityCommand.linear.x = 0.0;
 		isSwapMode = 0;
 		cout << "Emergency avoidence mode"<<"\n";
 		return;
  	  }
         }
 	numOfOb = (numOfOb + 1) / 2;
+	//Operate the robot based on the analyzied data
+	//Entering swap mode
 	if (numOfOb == 0 && isSwapMode == 0){
 	  float smallCount = 0;
 	  float largeCount = 0;
@@ -66,8 +77,9 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 	    havePosAngV = false;
 	  }
 	  isSwapMode = 1;
- 	  cout << "Entering swap line mode!" << "\n";	
+ 	  cout << "Entering swap row mode!" << "\n";	
 	}
+	//Normal avoid obstacles mode
 	if(isAnyOb == 1 && isSwapMode == 0)
         {
                 if (obAtLeft == 0){
@@ -76,28 +88,31 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
                         velocityCommand.angular.z = -0.3;
                 }
 
-                velocityCommand.linear.x = 0;
+                velocityCommand.linear.x = 0.0;
         }else if(isSwapMode == 0){
-                velocityCommand.angular.z = 0;
+                velocityCommand.angular.z = 0.0;
 
         }else{
 	  timer ++;
+
 	  //Finish the swap mode
-	  if (timer > 195){
+	  if (timer > 195){ 
 	    timer = 0;
 	    isSwapMode = 0;
-	  }else if (timer > 145){
+	    //Swap row mode finished 
+	    cout << "Swap row mode finished!\n"; 
+	  }else if (timer > 140){ // Trun 90 degrees to the right direction
 		if (havePosAngV){
 			velocityCommand.angular.z = 0.3;
 		}else{
 			velocityCommand.angular.z = -0.3;
 		}
 		velocityCommand.linear.x = 0.0;
-	  }else if (timer > 90){
+	  }else if (timer > 90){   //Go straight for a while
 	  	velocityCommand.linear.x = 0.1;
 		velocityCommand.angular.z = 0.0;
-	  }else if(timer > 38){  
-		if (havePosAngV){
+	  }else if(timer > 38){     // keep going straight until whole body of the robot has passed the obstacle  
+	    if (havePosAngV){  // then turn to right direction, based on the variable havePosAngV
 			velocityCommand.angular.z = 0.3;
 		}else{
 			velocityCommand.angular.z = -0.3;
@@ -105,7 +120,7 @@ void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& laserScanData)
 		velocityCommand.linear.x = 0.0;
 	  }
 	}
-	cout << "\n----------------------\n";
+	cout <<"\n"<< numOfOb << "\n----------------------\n";
 }
 
 int main (int argc, char **argv) {
