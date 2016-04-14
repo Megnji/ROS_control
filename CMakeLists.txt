@@ -103,7 +103,7 @@ include_directories(
 
 ## Declare a cpp executable
 # add_executable(robot_driver_node src/robot_driver_node.cpp)
-add_executable( pioneer_laser_node src/a.cpp) 
+add_executable( pioneer_laser_node src/robotControl.cpp) 
 target_link_libraries(pioneer_laser_node ${catkin_LIBRARIES}) 
 add_dependencies(pioneer_laser_node ${catkin_EXPORTED_TARGETS})
 ## Add cmake target dependencies of the executable/library

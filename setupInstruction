@@ -1,0 +1,23 @@
+cd ~
+mkdir -p rosws/src
+cd rosws/src
+source /opt/ros/indigo/setup.bash
+catkin_init_workspace
+git clone https://github.com/Megnji/ROS_control.git
+cd ..
+catkin_make
+source devel/setup.bash
+catkin_make
+roslaunch robot_driver launchStageLaser.launch
+
+ If you are using the robot laptops, you need to do the following: ◦ to find the IP addresses (inet addr): 
+
+ifconfig
+ ◦ on the desktop: 
+export ROS_MASTER_URI=http://<insert robot IP address>:11311 
+◦ on the desktop: 
+export ROS_IP=<insert desktop IP address> 
+
+• If you are NOT using the robot laptops, you need to do the following on your desktop:
+ ◦ export ROS_MASTER_URI=http://localhost:11311 
+◦ export ROS_HOSTNAME=localhost
